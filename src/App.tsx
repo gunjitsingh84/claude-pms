@@ -1,4 +1,4 @@
-import { ArrowRight, Check, CircleCheck, Layers3, ListTodo, ShieldCheck, Sparkles, Target, Users } from 'lucide-react';
+import { ArrowRight, Check, CircleCheck, Layers3, ListTodo, ShieldCheck,  Target, Users } from 'lucide-react';
 
 function App() {
   return (

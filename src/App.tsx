@@ -1,6 +1,87 @@
+import { useState } from 'react';
 import { ArrowRight, Check, CircleCheck, Layers3, ListTodo, ShieldCheck,  Target, Users } from 'lucide-react';
 
 function App() {
+  const [screen, setScreen] = useState<'landing' | 'signin'>('landing');
+  const [phone, setPhone] = useState('');
+  const [otp, setOtp] = useState('');
+  const [message, setMessage] = useState('');
+  const [authenticated, setAuthenticated] = useState(false);
+
+  const openSignIn = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    event.preventDefault();
+    setMessage('');
+    setOtp('');
+    setScreen('signin');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const verifyOtp = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const allowedAccounts: Record<string, string> = {
+      '9890227921': '300384',
+      '9815889156': '300384',
+    };
+    if (allowedAccounts[phone] && allowedAccounts[phone] === otp) {
+      setAuthenticated(true);
+      setMessage('');
+    } else {
+      setAuthenticated(false);
+      setMessage('Phone number or OTP is incorrect. Please try again.');
+    }
+  };
+
+  if (screen === 'signin') {
+    return (
+      <div className="auth-page">
+        <div className="auth-decoration auth-decoration-one" />
+        <div className="auth-decoration auth-decoration-two" />
+        <header className="auth-header">
+          <a className="landing-brand" href="/" onClick={(event) => { event.preventDefault(); setScreen('landing'); setAuthenticated(false); }}>
+            <span className="landing-brand-mark"><Layers3 size={21} strokeWidth={2.2} /></span>
+            <span>gunjit<span className="brand-period">.</span><small>PROJECT MANAGEMENT</small></span>
+          </a>
+          <span className="auth-header-note">YOUR WORKSPACE, IN ONE PLACE</span>
+        </header>
+        <main className="auth-main">
+          <section className="auth-card">
+            {authenticated ? (
+              <div className="auth-success">
+                <span className="auth-success-icon"><CircleCheck size={30} /></span>
+                <span className="section-kicker">VERIFIED SUCCESSFULLY</span>
+                <h1>You're signed in.</h1>
+                <p>Phone number <strong>+91 {phone}</strong> has been verified.</p>
+                <button className="auth-submit" type="button" onClick={() => { setScreen('landing'); setAuthenticated(false); }}>Continue to workspace <ArrowRight size={17} /></button>
+              </div>
+            ) : (
+              <>
+                <div className="auth-card-mark"><Layers3 size={23} /></div>
+                <span className="section-kicker">WELCOME BACK</span>
+                <h1>Sign in to your<br /><span>workspace.</span></h1>
+                <p className="auth-intro">Enter your phone number and 6-digit OTP to continue.</p>
+                <form className="auth-form" onSubmit={verifyOtp}>
+                  <label htmlFor="phone">Phone number</label>
+                  <div className="auth-input-wrap phone-input-wrap">
+                    <span className="country-code">+91</span>
+                    <input id="phone" type="tel" inputMode="numeric" autoComplete="tel-national" maxLength={10} placeholder="Enter 10-digit number" value={phone} onChange={(event) => { setPhone(event.target.value.replace(/\D/g, '').slice(0, 10)); setMessage(''); }} required pattern="[0-9]{10}" aria-describedby="phone-help" />
+                  </div>
+                  <small className="auth-field-help" id="phone-help">Use your registered phone number.</small>
+                  <label htmlFor="otp">6-digit OTP</label>
+                  <input className="auth-input otp-input" id="otp" type="text" inputMode="numeric" autoComplete="one-time-code" maxLength={6} placeholder="• • • • • •" value={otp} onChange={(event) => { setOtp(event.target.value.replace(/\D/g, '').slice(0, 6)); setMessage(''); }} required pattern="[0-9]{6}" />
+                  <p className="auth-demo-note"><ShieldCheck size={15} /> Demo sign-in: no SMS is sent. Use your assigned OTP.</p>
+                  {message && <p className="auth-error" role="alert">{message}</p>}
+                  <button className="auth-submit" type="submit">Verify &amp; sign in <ArrowRight size={17} /></button>
+                </form>
+                <button className="auth-back" type="button" onClick={() => setScreen('landing')}><ArrowRight size={14} className="auth-back-arrow" /> Back to home</button>
+              </>
+            )}
+          </section>
+          <p className="auth-footer-note"><ShieldCheck size={14} /> Simple, secure access to your work.</p>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="landing-page">
       <header className="landing-header">
@@ -12,7 +93,7 @@ function App() {
           <a href="#features">Features</a>
           <a href="#how-it-works">How it works</a>
         </nav>
-        <a className="signin-button" href="#signin">Sign in <ArrowRight size={16} /></a>
+        <a className="signin-button" href="#signin" onClick={openSignIn}>Sign in <ArrowRight size={16} /></a>
       </header>
 
       <main>
@@ -22,7 +103,7 @@ function App() {
             <h1>Bring your work<br />into <span>focus.</span></h1>
             <p className="hero-description">A simpler way to manage projects, organise tasks, and keep every important detail moving forward.</p>
             <div className="hero-actions">
-              <a className="hero-primary" href="#signin">Get started <ArrowRight size={17} /></a>
+              <a className="hero-primary" href="#signin" onClick={openSignIn}>Get started <ArrowRight size={17} /></a>
               <a className="hero-secondary" href="#features">Explore features <span>↓</span></a>
             </div>
             <div className="hero-proof"><span className="proof-check"><Check size={13} /></span> Made for the way you work <i /> Simple by design</div>
@@ -56,7 +137,7 @@ function App() {
           </div>
         </section>
 
-        <section className="landing-cta" id="how-it-works"><div className="cta-decoration cta-decoration-one" /><div className="cta-decoration cta-decoration-two" /><span className="section-kicker">YOUR NEXT STEP STARTS HERE</span><h2>Make room for meaningful work.</h2><p>Start with a clear view of what matters and build from there.</p><a className="cta-button" href="#signin">Sign in to your workspace <ArrowRight size={16} /></a></section>
+        <section className="landing-cta" id="how-it-works"><div className="cta-decoration cta-decoration-one" /><div className="cta-decoration cta-decoration-two" /><span className="section-kicker">YOUR NEXT STEP STARTS HERE</span><h2>Make room for meaningful work.</h2><p>Start with a clear view of what matters and build from there.</p><a className="cta-button" href="#signin" onClick={openSignIn}>Sign in to your workspace <ArrowRight size={16} /></a></section>
       </main>
       <footer className="landing-footer"><a className="landing-brand footer-brand" href="/"><span className="landing-brand-mark"><Layers3 size={18} /></span><span>gunjit<span className="brand-period">.</span><small>PROJECT MANAGEMENT</small></span></a><span>© 2026 Gunjit Project Management System</span><span className="footer-security"><ShieldCheck size={14} /> Built for focused work</span></footer>
     </div>

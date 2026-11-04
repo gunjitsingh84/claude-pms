@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { ArrowRight, Check, CircleCheck, Layers3, ListTodo, ShieldCheck,  Target, Users } from 'lucide-react';
+import { AlertTriangle, ArrowRight, Check, CircleCheck, ClipboardList, Clock3, Eye, EyeOff, FolderKanban, Layers3, LayoutDashboard, ListTodo, LogOut, ShieldCheck, Target, Users } from 'lucide-react';
 
 function App() {
-  const [screen, setScreen] = useState<'landing' | 'signin'>('landing');
+  const [screen, setScreen] = useState<'landing' | 'signin' | 'dashboard'>('landing');
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
+  const [showOtp, setShowOtp] = useState(false);
   const [message, setMessage] = useState('');
   const [authenticated, setAuthenticated] = useState(false);
 
@@ -25,11 +26,44 @@ function App() {
     if (allowedAccounts[phone] && allowedAccounts[phone] === otp) {
       setAuthenticated(true);
       setMessage('');
+      setScreen('dashboard');
     } else {
       setAuthenticated(false);
       setMessage('Phone number or OTP is incorrect. Please try again.');
     }
   };
+
+  if (screen === 'dashboard') {
+    return (
+      <div className="dashboard-page">
+        <aside className="dashboard-sidebar">
+          <a className="landing-brand dashboard-brand" href="#dashboard" onClick={(event) => event.preventDefault()}>
+            <span className="landing-brand-mark"><Layers3 size={21} strokeWidth={2.2} /></span>
+            <span>gunjit<span className="brand-period">.</span><small>PROJECT MANAGEMENT</small></span>
+          </a>
+          <div className="dashboard-workspace"><span className="workspace-avatar">G</span><span><strong>My Workspace</strong><small>Personal workspace</small></span></div>
+          <span className="dashboard-nav-label">WORKSPACE</span>
+          <nav className="dashboard-nav">
+            <a className="dashboard-nav-active" href="#overview"><LayoutDashboard size={17} /> Overview</a>
+            <a href="#projects"><FolderKanban size={17} /> Projects</a>
+            <a href="#tasks"><ClipboardList size={17} /> Tasks</a>
+          </nav>
+          <button className="dashboard-logout" type="button" onClick={() => { setScreen('signin'); setAuthenticated(false); setOtp(''); setMessage(''); }}><LogOut size={17} /> Sign out</button>
+        </aside>
+        <main className="dashboard-main">
+          <header className="dashboard-topbar"><div><span className="dashboard-breadcrumb">WORKSPACE / OVERVIEW</span><h1>Dashboard</h1></div><div className="dashboard-user"><span className="dashboard-user-avatar">{phone.slice(-2)}</span><span><strong>Welcome back</strong><small>+91 {phone}</small></span></div></header>
+          <section className="dashboard-welcome"><div><span className="section-kicker">YOUR WORK AT A GLANCE</span><h2>Good to see you.</h2><p>Here's an overview of your projects and tasks.</p></div><span className="dashboard-date">Workspace overview</span></section>
+          <section className="dashboard-metrics" aria-label="Project and task summary">
+            <article className="dashboard-metric metric-projects"><span className="metric-icon"><FolderKanban size={20} /></span><span className="metric-label">Total Projects</span><strong>0</strong><small>No projects added yet</small></article>
+            <article className="dashboard-metric metric-tasks"><span className="metric-icon"><ClipboardList size={20} /></span><span className="metric-label">Total Tasks</span><strong>0</strong><small>No tasks added yet</small></article>
+            <article className="dashboard-metric metric-pending"><span className="metric-icon"><Clock3 size={20} /></span><span className="metric-label">Pending Tasks</span><strong>0</strong><small>Tasks awaiting completion</small></article>
+            <article className="dashboard-metric metric-overdue"><span className="metric-icon"><AlertTriangle size={20} /></span><span className="metric-label">Overdue Tasks</span><strong>0</strong><small>Tasks past their due date</small></article>
+          </section>
+          <section className="dashboard-empty-panel"><div className="dashboard-empty-icon"><Target size={24} /></div><h3>Your workspace is ready</h3><p>Once you add projects and tasks, your dashboard will show live totals and progress here.</p></section>
+        </main>
+      </div>
+    );
+  }
 
   if (screen === 'signin') {
     return (
@@ -67,7 +101,10 @@ function App() {
                   </div>
                   <small className="auth-field-help" id="phone-help">Use your registered phone number.</small>
                   <label htmlFor="otp">6-digit OTP</label>
-                  <input className="auth-input otp-input" id="otp" type="text" inputMode="numeric" autoComplete="one-time-code" maxLength={6} placeholder="• • • • • •" value={otp} onChange={(event) => { setOtp(event.target.value.replace(/\D/g, '').slice(0, 6)); setMessage(''); }} required pattern="[0-9]{6}" />
+                  <div className="otp-input-wrap">
+                    <input className="auth-input otp-input" id="otp" type={showOtp ? "text" : "password"} inputMode="numeric" autoComplete="one-time-code" maxLength={6} placeholder="Enter 6-digit OTP" value={otp} onChange={(event) => { setOtp(event.target.value.replace(/\D/g, '').slice(0, 6)); setMessage(''); }} required pattern="[0-9]{6}" />
+                    <button className="otp-visibility-toggle" type="button" onClick={() => setShowOtp((visible) => !visible)} aria-label={showOtp ? "Hide OTP" : "Show OTP"} title={showOtp ? "Hide OTP" : "Show OTP"}>{showOtp ? <EyeOff size={18} /> : <Eye size={18} />}</button>
+                  </div>
                   <p className="auth-demo-note"><ShieldCheck size={15} /> Demo sign-in: no SMS is sent. Use your assigned OTP.</p>
                   {message && <p className="auth-error" role="alert">{message}</p>}
                   <button className="auth-submit" type="submit">Verify &amp; sign in <ArrowRight size={17} /></button>

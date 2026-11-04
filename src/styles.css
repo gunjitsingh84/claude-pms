@@ -52,3 +52,55 @@
 .auth-success-icon{width:62px;height:62px;border-radius:50%;display:grid;place-items:center;margin:0 auto 24px;background:#e5eee4;color:#3e684a}
 .auth-success .auth-submit{margin-top:25px}
 @media(max-width:600px){.auth-header{height:78px;padding:0 20px}.auth-header-note{font-size:8px;letter-spacing:1px}.auth-main{min-height:calc(100vh - 78px);padding:12px 16px 36px}.auth-card{padding:32px 25px 28px;border-radius:18px}.auth-card h1{font-size:30px}.auth-header .landing-brand{font-size:20px}.auth-header .landing-brand small{font-size:7px}}
+
+/* Login field hierarchy: phone number prominent, OTP compact */
+.auth-input-wrap input{font-size:18px!important;font-weight:600;letter-spacing:.2px}
+.otp-input-wrap{position:relative;width:100%;display:flex;align-items:center}
+.otp-input-wrap .auth-input{padding-right:52px}
+.otp-input-wrap .otp-input{font-size:13px!important;letter-spacing:2px;font-weight:500}
+.otp-visibility-toggle{position:absolute;right:7px;top:50%;transform:translateY(-50%);width:38px;height:38px;display:grid;place-items:center;border:0;border-radius:8px;background:transparent;color:#727b6f;cursor:pointer}
+.otp-visibility-toggle:hover{background:#f0f3ed;color:#355b40}
+
+/* GPMS dashboard */
+.dashboard-page{min-height:100vh;background:#f8f7f2;color:#283027;display:flex;font-family:'DM Sans',sans-serif}
+.dashboard-sidebar{width:252px;flex:0 0 252px;background:#fff;border-right:1px solid #e9e8df;padding:25px 17px 18px;display:flex;flex-direction:column;min-height:100vh}
+.dashboard-brand{padding:0 5px 30px}
+.dashboard-workspace{display:flex;align-items:center;gap:11px;padding:12px 10px;border:1px solid #e9e8df;border-radius:11px}
+.dashboard-workspace>span:last-child,.dashboard-user>span:last-child{display:flex;flex-direction:column;gap:4px}
+.dashboard-workspace strong,.dashboard-user strong{font-size:12px;color:#354034}
+.dashboard-workspace small,.dashboard-user small{font-size:10px;color:#92988e}
+.dashboard-workspace .workspace-avatar{flex:0 0 34px}
+.dashboard-nav-label{font-size:9px;font-weight:700;letter-spacing:1.5px;color:#9ba194;margin:30px 10px 11px}
+.dashboard-nav{display:grid;gap:5px}
+.dashboard-nav a{height:42px;display:flex;align-items:center;gap:12px;padding:0 11px;border-radius:9px;color:#737d70;font-size:12px;font-weight:600}
+.dashboard-nav a:hover{background:#f5f7f1;color:#426449}
+.dashboard-nav a.dashboard-nav-active{background:#eaf1e8;color:#355b40}
+.dashboard-logout{margin-top:auto;height:42px;display:flex;align-items:center;gap:11px;padding:0 11px;border:0;border-radius:9px;background:transparent;color:#7c8178;font:inherit;font-size:12px;font-weight:600;text-align:left}
+.dashboard-logout:hover{background:#fff0ed;color:#a7473e}
+.dashboard-main{flex:1;min-width:0;padding:0 42px 48px}
+.dashboard-topbar{height:94px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #e8e8df}
+.dashboard-breadcrumb{font-size:9px;letter-spacing:1.5px;font-weight:700;color:#92998d}
+.dashboard-topbar h1{font-family:Manrope,sans-serif;font-size:23px;letter-spacing:-.6px;margin:5px 0 0;color:#293329}
+.dashboard-user{display:flex;align-items:center;gap:10px}
+.dashboard-user-avatar{width:37px;height:37px;border-radius:50%;display:grid;place-items:center;background:#e8efe5;color:#426449;font-size:12px;font-weight:700}
+.dashboard-welcome{display:flex;align-items:flex-end;justify-content:space-between;padding:37px 0 25px}
+.dashboard-welcome .section-kicker{font-size:9px;letter-spacing:1.7px;color:#778a70;font-weight:700}
+.dashboard-welcome h2{font-family:Manrope,sans-serif;font-size:28px;letter-spacing:-1px;margin:8px 0 6px;color:#2c362c}
+.dashboard-welcome p{margin:0;color:#858b80;font-size:12px}
+.dashboard-date{font-size:10px;color:#7d8678;background:#fff;border:1px solid #e9e8df;border-radius:8px;padding:9px 12px}
+.dashboard-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+.dashboard-metric{position:relative;min-height:166px;background:#fff;border:1px solid #e9e8df;border-radius:14px;padding:19px 18px;display:flex;flex-direction:column;align-items:flex-start;box-shadow:0 5px 18px rgba(41,53,40,.025)}
+.metric-icon{width:38px;height:38px;display:grid;place-items:center;border-radius:11px;margin-bottom:16px}
+.metric-label{font-size:11px;font-weight:600;color:#727c70}
+.dashboard-metric strong{font-family:Manrope,sans-serif;font-size:29px;line-height:1.2;letter-spacing:-1px;color:#2e392e;margin-top:7px}
+.dashboard-metric small{font-size:9px;color:#9a9f96;margin-top:5px}
+.metric-projects .metric-icon{background:#e8f0e6;color:#4c7450}
+.metric-tasks .metric-icon{background:#fcebe6;color:#c16d59}
+.metric-pending .metric-icon{background:#f8f0dc;color:#a98139}
+.metric-overdue .metric-icon{background:#f9e8e5;color:#b85a4f}
+.dashboard-empty-panel{margin-top:23px;min-height:220px;background:#fff;border:1px solid #e9e8df;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px}
+.dashboard-empty-icon{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;background:#edf2e9;color:#5c7b58;margin-bottom:14px}
+.dashboard-empty-panel h3{font-family:Manrope,sans-serif;font-size:16px;margin:0 0 7px;color:#344034}
+.dashboard-empty-panel p{max-width:390px;font-size:11px;line-height:1.7;color:#8b9187;margin:0}
+@media(max-width:1000px){.dashboard-main{padding:0 25px 40px}.dashboard-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:650px){.dashboard-sidebar{width:66px;flex-basis:66px;padding:18px 9px}.dashboard-brand>span:last-child,.dashboard-workspace>span:last-child,.dashboard-nav-label,.dashboard-nav a:not(.dashboard-nav-active){display:none}.dashboard-brand{padding:0 0 25px;justify-content:center}.dashboard-workspace{padding:8px 5px;justify-content:center}.dashboard-nav a{justify-content:center;padding:0}.dashboard-nav a svg{flex:0 0 auto}.dashboard-logout{justify-content:center;padding:0}.dashboard-logout{font-size:0}.dashboard-logout svg{width:18px;height:18px}.dashboard-main{padding:0 15px 30px}.dashboard-topbar{height:78px}.dashboard-topbar h1{font-size:19px}.dashboard-user strong{font-size:10px}.dashboard-user small{font-size:9px}.dashboard-welcome{padding:27px 0 20px;align-items:flex-start;gap:10px;flex-direction:column}.dashboard-welcome h2{font-size:24px}.dashboard-metrics{gap:10px}.dashboard-metric{min-height:150px;padding:14px}.dashboard-metric strong{font-size:25px}.dashboard-empty-panel{min-height:190px}}

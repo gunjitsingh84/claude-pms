@@ -120,9 +120,9 @@ function App() {
                     <input id="phone" type="tel" inputMode="numeric" autoComplete="tel-national" maxLength={10} placeholder="Enter 10-digit number" value={phone} onChange={(event) => { setPhone(event.target.value.replace(/\D/g, '').slice(0, 10)); setMessage(''); }} required pattern="[0-9]{10}" aria-describedby="phone-help" />
                   </div>
                   <small className="auth-field-help" id="phone-help">Use your registered phone number.</small>
-                  <label htmlFor="otp">6-digit OTP</label>
+                  <label htmlFor="otp">6-digit PIN</label>
                   <div className="otp-input-wrap">
-                    <input className="auth-input otp-input" id="otp" type={showOtp ? "text" : "password"} inputMode="numeric" autoComplete="one-time-code" maxLength={6} placeholder="Enter your 6-digit PIN" value={otp} onChange={(event) => { setOtp(event.target.value.replace(/\D/g, '').slice(0, 6)); setMessage(''); }} required pattern="[0-9]{6}" />
+                    <input className="auth-input otp-input" id="otp" type={showOtp ? "text" : "password"} inputMode="numeric" autoComplete="off" maxLength={6} placeholder="Enter your 6-digit PIN" value={otp} onChange={(event) => { setOtp(event.target.value.replace(/\D/g, '').slice(0, 6)); setMessage(''); }} required pattern="[0-9]{6}" />
                     <button className="otp-visibility-toggle" type="button" onClick={() => setShowOtp((visible) => !visible)} aria-label={showOtp ? "Hide OTP" : "Show OTP"} title={showOtp ? "Hide OTP" : "Show OTP"}>{showOtp ? <EyeOff size={18} /> : <Eye size={18} />}</button>
                   </div>
                   <p className="auth-demo-note"><ShieldCheck size={15} /> Enter the 6-digit PIN saved with your account. No SMS is sent.</p>

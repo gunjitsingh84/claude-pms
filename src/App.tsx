@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { supabase } from './lib/supabase';
 import { AlertTriangle, ArrowRight, Check, CircleCheck, ClipboardList, Clock3, Eye, EyeOff, FolderKanban, Layers3, LayoutDashboard, ListTodo, LogOut, ShieldCheck, Target, Users } from 'lucide-react';
 
 function App() {
@@ -8,6 +9,8 @@ function App() {
   const [showOtp, setShowOtp] = useState(false);
   const [message, setMessage] = useState('');
   const [authenticated, setAuthenticated] = useState(false);
+  const [fullName, setFullName] = useState('');
+  const [isVerifying, setIsVerifying] = useState(false);
 
   const openSignIn = (event: React.MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
@@ -17,19 +20,36 @@ function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const verifyOtp = (event: React.FormEvent<HTMLFormElement>) => {
+  const verifyOtp = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const allowedAccounts: Record<string, string> = {
-      '9890227921': '300384',
-      '9815889156': '300384',
-    };
-    if (allowedAccounts[phone] && allowedAccounts[phone] === otp) {
+    if (!supabase) {
+      setMessage('Login service is not configured. Please try again later.');
+      return;
+    }
+
+    setIsVerifying(true);
+    setMessage('');
+    try {
+      const { data, error } = await supabase.functions.invoke('gpms-login', {
+        body: { phone, pin: otp },
+      });
+
+      if (error || !data?.user) {
+        setAuthenticated(false);
+        setMessage(data?.error || 'Phone number or PIN is incorrect. Please try again.');
+        return;
+      }
+
+      setFullName(data.user.full_name);
+      setPhone(data.user.phone_number);
       setAuthenticated(true);
-      setMessage('');
+      setOtp('');
       setScreen('dashboard');
-    } else {
+    } catch {
       setAuthenticated(false);
-      setMessage('Phone number or OTP is incorrect. Please try again.');
+      setMessage('Unable to verify your login. Please check your connection and try again.');
+    } finally {
+      setIsVerifying(false);
     }
   };
 
@@ -51,7 +71,7 @@ function App() {
           <button className="dashboard-logout" type="button" onClick={() => { setScreen('signin'); setAuthenticated(false); setOtp(''); setMessage(''); }}><LogOut size={17} /> Sign out</button>
         </aside>
         <main className="dashboard-main">
-          <header className="dashboard-topbar"><div><span className="dashboard-breadcrumb">WORKSPACE / OVERVIEW</span><h1>Dashboard</h1></div><div className="dashboard-user"><span className="dashboard-user-avatar">{phone.slice(-2)}</span><span><strong>Welcome back</strong><small>+91 {phone}</small></span></div></header>
+          <header className="dashboard-topbar"><div><span className="dashboard-breadcrumb">WORKSPACE / OVERVIEW</span><h1>Dashboard</h1></div><div className="dashboard-user"><span className="dashboard-user-avatar">{phone.slice(-2)}</span><span><strong>Welcome, {fullName || 'User'}</strong><small>+91 {phone}</small></span></div></header>
           <section className="dashboard-welcome"><div><span className="section-kicker">YOUR WORK AT A GLANCE</span><h2>Good to see you.</h2><p>Here's an overview of your projects and tasks.</p></div><span className="dashboard-date">Workspace overview</span></section>
           <section className="dashboard-metrics" aria-label="Project and task summary">
             <article className="dashboard-metric metric-projects"><span className="metric-icon"><FolderKanban size={20} /></span><span className="metric-label">Total Projects</span><strong>0</strong><small>No projects added yet</small></article>
@@ -92,7 +112,7 @@ function App() {
                 <div className="auth-card-mark"><Layers3 size={23} /></div>
                 <span className="section-kicker">WELCOME BACK</span>
                 <h1>Sign in to your<br /><span>workspace.</span></h1>
-                <p className="auth-intro">Enter your phone number and 6-digit OTP to continue.</p>
+                <p className="auth-intro">Enter your phone number and 6-digit PIN to continue.</p>
                 <form className="auth-form" onSubmit={verifyOtp}>
                   <label htmlFor="phone">Phone number</label>
                   <div className="auth-input-wrap phone-input-wrap">
@@ -102,12 +122,12 @@ function App() {
                   <small className="auth-field-help" id="phone-help">Use your registered phone number.</small>
                   <label htmlFor="otp">6-digit OTP</label>
                   <div className="otp-input-wrap">
-                    <input className="auth-input otp-input" id="otp" type={showOtp ? "text" : "password"} inputMode="numeric" autoComplete="one-time-code" maxLength={6} placeholder="Enter 6-digit OTP" value={otp} onChange={(event) => { setOtp(event.target.value.replace(/\D/g, '').slice(0, 6)); setMessage(''); }} required pattern="[0-9]{6}" />
+                    <input className="auth-input otp-input" id="otp" type={showOtp ? "text" : "password"} inputMode="numeric" autoComplete="one-time-code" maxLength={6} placeholder="Enter your 6-digit PIN" value={otp} onChange={(event) => { setOtp(event.target.value.replace(/\D/g, '').slice(0, 6)); setMessage(''); }} required pattern="[0-9]{6}" />
                     <button className="otp-visibility-toggle" type="button" onClick={() => setShowOtp((visible) => !visible)} aria-label={showOtp ? "Hide OTP" : "Show OTP"} title={showOtp ? "Hide OTP" : "Show OTP"}>{showOtp ? <EyeOff size={18} /> : <Eye size={18} />}</button>
                   </div>
-                  <p className="auth-demo-note"><ShieldCheck size={15} /> Demo sign-in: no SMS is sent. Use your assigned OTP.</p>
+                  <p className="auth-demo-note"><ShieldCheck size={15} /> Enter the 6-digit PIN saved with your account. No SMS is sent.</p>
                   {message && <p className="auth-error" role="alert">{message}</p>}
-                  <button className="auth-submit" type="submit">Verify &amp; sign in <ArrowRight size={17} /></button>
+                  <button className="auth-submit" type="submit" disabled={isVerifying}>{isVerifying ? 'Verifying…' : 'Verify & sign in'} <ArrowRight size={17} /></button>
                 </form>
                 <button className="auth-back" type="button" onClick={() => setScreen('landing')}><ArrowRight size={14} className="auth-back-arrow" /> Back to home</button>
               </>

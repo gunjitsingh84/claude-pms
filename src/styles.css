@@ -104,3 +104,62 @@
 .dashboard-empty-panel p{max-width:390px;font-size:11px;line-height:1.7;color:#8b9187;margin:0}
 @media(max-width:1000px){.dashboard-main{padding:0 25px 40px}.dashboard-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:650px){.dashboard-sidebar{width:66px;flex-basis:66px;padding:18px 9px}.dashboard-brand>span:last-child,.dashboard-workspace>span:last-child,.dashboard-nav-label,.dashboard-nav a:not(.dashboard-nav-active){display:none}.dashboard-brand{padding:0 0 25px;justify-content:center}.dashboard-workspace{padding:8px 5px;justify-content:center}.dashboard-nav a{justify-content:center;padding:0}.dashboard-nav a svg{flex:0 0 auto}.dashboard-logout{justify-content:center;padding:0}.dashboard-logout{font-size:0}.dashboard-logout svg{width:18px;height:18px}.dashboard-main{padding:0 15px 30px}.dashboard-topbar{height:78px}.dashboard-topbar h1{font-size:19px}.dashboard-user strong{font-size:10px}.dashboard-user small{font-size:9px}.dashboard-welcome{padding:27px 0 20px;align-items:flex-start;gap:10px;flex-direction:column}.dashboard-welcome h2{font-size:24px}.dashboard-metrics{gap:10px}.dashboard-metric{min-height:150px;padding:14px}.dashboard-metric strong{font-size:25px}.dashboard-empty-panel{min-height:190px}}
+
+
+/* GPMS project management screens */
+.project-primary-button{display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:42px;padding:0 16px;border:0;border-radius:9px;background:#355b40;color:#fff;font:inherit;font-size:12px;font-weight:700;cursor:pointer;transition:background .2s,transform .2s}
+.project-primary-button:hover{background:#294b34;transform:translateY(-1px)}
+.project-primary-button:disabled{opacity:.65;cursor:wait;transform:none}
+.project-text-button{display:inline-flex;align-items:center;gap:7px;border:0;background:transparent;color:#426449;font:inherit;font-size:11px;font-weight:700;cursor:pointer}
+.project-text-button:hover{color:#294b34}
+.dashboard-recent-projects,.projects-page-section{margin-top:26px}
+.project-section-heading,.projects-page-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:15px}
+.project-section-heading h3,.projects-page-heading h2,.new-project-heading h2{font-family:Manrope,sans-serif;color:#2e392e;font-size:20px;letter-spacing:-.5px;margin:5px 0 0}
+.projects-page-heading p,.new-project-heading p{font-size:11px;color:#858b80;margin:6px 0 0}
+.project-list-row{width:100%;display:flex;align-items:center;gap:13px;text-align:left;background:#fff;border:1px solid #e9e8df;border-radius:11px;padding:12px 14px;margin-top:8px;cursor:pointer}
+.project-list-row:hover{border-color:#cbd9c7;background:#fcfdfb}
+.project-row-mark{width:36px;height:36px;flex:0 0 36px;display:grid;place-items:center;border-radius:10px;background:#e8f0e6;color:#486d4b;font-size:13px;font-weight:700}
+.project-row-main{display:flex;flex-direction:column;gap:4px;flex:1;min-width:0}
+.project-row-main strong,.projects-table-name strong{font-size:12px;color:#354034}
+.project-row-main small,.projects-table-name small{font-size:10px;color:#92988e}
+.project-status{display:inline-flex;align-items:center;white-space:nowrap;border-radius:20px;padding:5px 9px;background:#eef2ea;color:#56704e;font-size:9px;font-weight:700}
+.status-active{background:#e7f2e8;color:#387248}
+.status-on-hold{background:#fbf1dc;color:#9b752d}
+.status-completed{background:#e7eff8;color:#4e6e91}
+.status-cancelled{background:#f7e9e7;color:#a95d53}
+.project-priority{font-size:10px;color:#747e71;font-weight:600;white-space:nowrap}
+.priority-high,.priority-critical{color:#b65e4f}
+.priority-low{color:#71876a}
+.projects-page-section{margin-top:31px}
+.projects-page-heading{align-items:center;margin-bottom:22px}
+.projects-page-heading h2{font-size:24px}
+.projects-table-wrap{background:#fff;border:1px solid #e9e8df;border-radius:13px;overflow:hidden}
+.projects-table-heading,.projects-table-row{display:grid;grid-template-columns:minmax(230px,2fr) minmax(110px,.9fr) minmax(90px,.7fr) minmax(110px,.8fr);align-items:center;gap:14px;padding:13px 17px}
+.projects-table-heading{background:#fbfcf9;border-bottom:1px solid #e9e8df;color:#9ba194;font-size:9px;font-weight:700;letter-spacing:1px}
+.projects-table-row{min-height:68px;border-bottom:1px solid #f0f0e9}
+.projects-table-row:last-child{border-bottom:0}
+.projects-table-name{display:flex;align-items:center;gap:11px;min-width:0}
+.projects-table-name>span:last-child{display:flex;flex-direction:column;gap:4px;min-width:0}
+.project-date{font-size:10px;color:#7e877a}
+.projects-empty{margin-top:0;min-height:260px}
+.projects-empty .project-primary-button{margin-top:18px}
+.project-success-message{background:#eaf3e8;color:#3d7046;border-radius:8px;padding:10px 13px;font-size:11px;margin:0 0 15px}
+.new-project-section{max-width:880px;margin:28px auto 0}
+.project-back-button{display:inline-flex;align-items:center;gap:7px;border:0;background:transparent;color:#687566;font:inherit;font-size:11px;font-weight:600;cursor:pointer;padding:0;margin-bottom:22px}
+.project-back-button:hover{color:#355b40}
+.new-project-heading{margin-bottom:20px}
+.new-project-heading h2{font-size:25px}
+.new-project-form{background:#fff;border:1px solid #e9e8df;border-radius:14px;padding:24px 25px;box-shadow:0 5px 18px rgba(41,53,40,.025)}
+.project-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:17px 16px}
+.project-form-field{display:flex;flex-direction:column;gap:7px;color:#596455;font-size:10px;font-weight:700}
+.project-form-field>span{display:inline;color:#b85a4f}
+.project-form-field input,.project-form-field select,.project-form-field textarea{width:100%;min-width:0;border:1px solid #dedfd6;border-radius:8px;background:#fff;color:#30392f;padding:11px 12px;font:inherit;font-size:12px;font-weight:400;outline:none;transition:border-color .2s,box-shadow .2s}
+.project-form-field input,.project-form-field select{height:42px}
+.project-form-field textarea{resize:vertical;line-height:1.55}
+.project-form-field input:focus,.project-form-field select:focus,.project-form-field textarea:focus{border-color:#8ca68a;box-shadow:0 0 0 3px rgba(87,122,81,.1)}
+.project-field-wide{grid-column:1/-1}
+.new-project-actions{display:flex;justify-content:flex-end;align-items:center;gap:10px;border-top:1px solid #eeeFE8;margin-top:22px;padding-top:17px}
+.project-cancel-button{height:42px;padding:0 17px;border:1px solid #dedfd6;border-radius:9px;background:#fff;color:#687366;font:inherit;font-size:11px;font-weight:600;cursor:pointer}
+.project-cancel-button:hover{background:#f7f8f4}
+@media(max-width:900px){.projects-table-heading,.projects-table-row{grid-template-columns:minmax(180px,1.6fr) minmax(95px,.9fr) minmax(75px,.7fr) minmax(90px,.8fr);gap:9px;padding-left:12px;padding-right:12px}}
+@media(max-width:650px){.dashboard-nav a:not(.dashboard-nav-active){display:flex}.dashboard-nav a{font-size:0;justify-content:center;padding:0}.project-list-row{gap:8px;padding:10px}.project-row-mark{width:32px;height:32px;flex-basis:32px}.project-status,.project-priority{font-size:8px;padding:4px 6px}.project-section-heading,.projects-page-heading{align-items:flex-start}.projects-page-heading{flex-direction:column}.projects-table-heading{display:none}.projects-table-row{grid-template-columns:minmax(0,1fr) auto;gap:9px;padding:12px}.projects-table-name{grid-column:1/-1}.projects-table-row .project-status{justify-self:start}.project-date{justify-self:end}.new-project-section{margin-top:20px}.new-project-form{padding:17px 14px}.project-form-grid{grid-template-columns:1fr;gap:14px}.project-field-wide{grid-column:auto}.new-project-heading h2{font-size:22px}.new-project-actions{position:sticky;bottom:0;background:#fff;padding:14px 0 0}.dashboard-welcome .project-primary-button{align-self:stretch}}

@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import { supabase } from './lib/supabase';
-import { AlertTriangle, ArrowRight, Check, CircleCheck, ClipboardList, Clock3, Eye, EyeOff, FolderKanban, Layers3, LayoutDashboard, ListTodo, LogOut, ShieldCheck, Target, Users } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, ArrowRight, Check, CircleCheck, ClipboardList, Clock3, Eye, EyeOff, FolderKanban, Layers3, LayoutDashboard, ListTodo, LogOut, Plus, ShieldCheck, Target, Users } from 'lucide-react';
+
+type Project = { id: string; project_code: string | null; name: string; client_name: string | null; description: string | null; status: string; priority: string; start_date: string | null; target_end_date: string | null; actual_completion_date: string | null; budget: number | null; currency: string; project_manager: string | null; notes: string | null; created_at: string; };
+type ProjectForm = { project_code: string; name: string; client_name: string; description: string; status: string; priority: string; start_date: string; target_end_date: string; budget: string; currency: string; project_manager: string; notes: string; };
+const blankProject: ProjectForm = { project_code: '', name: '', client_name: '', description: '', status: 'Not Started', priority: 'Medium', start_date: '', target_end_date: '', budget: '', currency: 'INR', project_manager: '', notes: '' };
 
 function App() {
   const [screen, setScreen] = useState<'landing' | 'signin' | 'dashboard'>('landing');
@@ -11,6 +15,12 @@ function App() {
   const [authenticated, setAuthenticated] = useState(false);
   const [fullName, setFullName] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
+  const [sessionToken, setSessionToken] = useState('');
+  const [activeView, setActiveView] = useState<'overview' | 'projects' | 'new-project'>('overview');
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [projectForm, setProjectForm] = useState<ProjectForm>(blankProject);
+  const [projectMessage, setProjectMessage] = useState('');
+  const [isSavingProject, setIsSavingProject] = useState(false);
 
   const openSignIn = (event: React.MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
@@ -20,6 +30,12 @@ function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const loadProjects = async (token: string) => {
+    if (!supabase) throw new Error('Supabase is not configured.');
+    const { data, error } = await supabase.functions.invoke('gpms-projects', { body: { action: 'list' }, headers: { Authorization: 'Bearer ' + token } });
+    if (error || !data?.projects) throw new Error(data?.error || 'Unable to load projects.');
+    setProjects(data.projects as Project[]);
+  };
   const verifyOtp = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!supabase) {
@@ -42,17 +58,40 @@ function App() {
 
       setFullName(data.user.full_name);
       setPhone(data.user.phone_number);
+      setSessionToken(data.session_token);
       setAuthenticated(true);
+      setActiveView('overview');
+      setProjectMessage('');
+      await loadProjects(data.session_token);
       setOtp('');
       setScreen('dashboard');
-    } catch {
+    } catch (error) {
       setAuthenticated(false);
-      setMessage('Unable to verify your login. Please check your connection and try again.');
+      setMessage(error instanceof Error ? error.message : 'Unable to verify your login. Please check your connection and try again.');
     } finally {
       setIsVerifying(false);
     }
   };
 
+  const createProject = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!supabase || !sessionToken) { setProjectMessage('Your session has expired. Please sign in again.'); return; }
+    setIsSavingProject(true); setProjectMessage('');
+    try {
+      const { data, error } = await supabase.functions.invoke('gpms-projects', {
+        body: { action: 'create', project: { ...projectForm, budget: projectForm.budget.trim() ? Number(projectForm.budget) : null } },
+        headers: { Authorization: 'Bearer ' + sessionToken },
+      });
+      if (error || !data?.project) { setProjectMessage(data?.error || 'Could not save this project. Please try again.'); return; }
+      setProjects((current) => [data.project as Project, ...current]);
+      setProjectForm(blankProject); setActiveView('projects'); setProjectMessage('Project created successfully.');
+    } catch { setProjectMessage('Unable to save the project. Please check your connection and try again.'); }
+    finally { setIsSavingProject(false); }
+  };
+  const updateProjectField = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = event.target;
+    setProjectForm((current) => ({ ...current, [name]: value }));
+  };
   if (screen === 'dashboard') {
     return (
       <div className="dashboard-page">
@@ -64,22 +103,47 @@ function App() {
           <div className="dashboard-workspace"><span className="workspace-avatar">G</span><span><strong>My Workspace</strong><small>Personal workspace</small></span></div>
           <span className="dashboard-nav-label">WORKSPACE</span>
           <nav className="dashboard-nav">
-            <a className="dashboard-nav-active" href="#overview"><LayoutDashboard size={17} /> Overview</a>
-            <a href="#projects"><FolderKanban size={17} /> Projects</a>
+            <a className={activeView === "overview" ? "dashboard-nav-active" : ""} href="#overview" onClick={(event) => { event.preventDefault(); setActiveView("overview"); }}><LayoutDashboard size={17} /> Overview</a>
+            <a className={activeView !== "overview" ? "dashboard-nav-active" : ""} href="#projects" onClick={(event) => { event.preventDefault(); setActiveView("projects"); setProjectMessage(""); }}><FolderKanban size={17} /> Projects</a>
             <a href="#tasks"><ClipboardList size={17} /> Tasks</a>
           </nav>
-          <button className="dashboard-logout" type="button" onClick={() => { setScreen('signin'); setAuthenticated(false); setOtp(''); setMessage(''); }}><LogOut size={17} /> Sign out</button>
+          <button className="dashboard-logout" type="button" onClick={() => { setScreen('signin'); setAuthenticated(false); setSessionToken(''); setProjects([]); setOtp(''); setMessage(''); }}><LogOut size={17} /> Sign out</button>
         </aside>
         <main className="dashboard-main">
-          <header className="dashboard-topbar"><div><span className="dashboard-breadcrumb">WORKSPACE / OVERVIEW</span><h1>Dashboard</h1></div><div className="dashboard-user"><span className="dashboard-user-avatar">{phone.slice(-2)}</span><span><strong>Welcome, {fullName || 'User'}</strong><small>+91 {phone}</small></span></div></header>
-          <section className="dashboard-welcome"><div><span className="section-kicker">YOUR WORK AT A GLANCE</span><h2>Good to see you.</h2><p>Here's an overview of your projects and tasks.</p></div><span className="dashboard-date">Workspace overview</span></section>
-          <section className="dashboard-metrics" aria-label="Project and task summary">
-            <article className="dashboard-metric metric-projects"><span className="metric-icon"><FolderKanban size={20} /></span><span className="metric-label">Total Projects</span><strong>0</strong><small>No projects added yet</small></article>
-            <article className="dashboard-metric metric-tasks"><span className="metric-icon"><ClipboardList size={20} /></span><span className="metric-label">Total Tasks</span><strong>0</strong><small>No tasks added yet</small></article>
-            <article className="dashboard-metric metric-pending"><span className="metric-icon"><Clock3 size={20} /></span><span className="metric-label">Pending Tasks</span><strong>0</strong><small>Tasks awaiting completion</small></article>
-            <article className="dashboard-metric metric-overdue"><span className="metric-icon"><AlertTriangle size={20} /></span><span className="metric-label">Overdue Tasks</span><strong>0</strong><small>Tasks past their due date</small></article>
-          </section>
-          <section className="dashboard-empty-panel"><div className="dashboard-empty-icon"><Target size={24} /></div><h3>Your workspace is ready</h3><p>Once you add projects and tasks, your dashboard will show live totals and progress here.</p></section>
+          <header className="dashboard-topbar"><div><span className="dashboard-breadcrumb">WORKSPACE / {activeView === "overview" ? "OVERVIEW" : activeView === "projects" ? "PROJECTS" : "NEW PROJECT"}</span><h1>{activeView === "overview" ? "Dashboard" : activeView === "projects" ? "Projects" : "New Project"}</h1></div><div className="dashboard-user"><span className="dashboard-user-avatar">{fullName.slice(0, 1).toUpperCase()}</span><span><strong>Welcome, {fullName || "User"}</strong><small>+91 {phone}</small></span></div></header>
+          {activeView === "overview" && <>
+            <section className="dashboard-welcome"><div><span className="section-kicker">YOUR WORK AT A GLANCE</span><h2>Good to see you.</h2><p>Here is an overview of your projects and tasks.</p></div><button className="project-primary-button" type="button" onClick={() => { setProjectForm(blankProject); setProjectMessage(""); setActiveView("new-project"); }}><Plus size={16} /> New Project</button></section>
+            <section className="dashboard-metrics" aria-label="Project and task summary">
+              <article className="dashboard-metric metric-projects"><span className="metric-icon"><FolderKanban size={20} /></span><span className="metric-label">Total Projects</span><strong>{projects.length}</strong><small>{projects.length} projects in your workspace</small></article>
+              <article className="dashboard-metric metric-tasks"><span className="metric-icon"><ClipboardList size={20} /></span><span className="metric-label">Total Tasks</span><strong>0</strong><small>Tasks will appear here</small></article>
+              <article className="dashboard-metric metric-pending"><span className="metric-icon"><Clock3 size={20} /></span><span className="metric-label">Pending Tasks</span><strong>0</strong><small>Tasks awaiting completion</small></article>
+              <article className="dashboard-metric metric-overdue"><span className="metric-icon"><AlertTriangle size={20} /></span><span className="metric-label">Overdue Tasks</span><strong>0</strong><small>Tasks past their due date</small></article>
+            </section>
+            {projects.length === 0 ? <section className="dashboard-empty-panel"><div className="dashboard-empty-icon"><Target size={24} /></div><h3>Your workspace is ready</h3><p>Create your first project to start organising the work, milestones and tasks in your workspace.</p><button className="project-text-button" type="button" onClick={() => { setProjectForm(blankProject); setActiveView("new-project"); }}>Create your first project <ArrowRight size={14} /></button></section> : <section className="dashboard-recent-projects"><div className="project-section-heading"><div><span className="section-kicker">KEEP THINGS MOVING</span><h3>Recent projects</h3></div><button className="project-text-button" type="button" onClick={() => setActiveView("projects")}>View all <ArrowRight size={14} /></button></div>{projects.slice(0, 3).map((project) => <button className="project-list-row" type="button" key={project.id} onClick={() => setActiveView("projects")}><span className="project-row-mark">{project.name.slice(0, 1).toUpperCase()}</span><span className="project-row-main"><strong>{project.name}</strong><small>{project.client_name || "No client specified"}</small></span><span className={"project-status status-" + project.status.toLowerCase().replaceAll(" ", "-")}>{project.status}</span><span className="project-priority">{project.priority}</span></button>)}</section>}
+          </>}
+          {activeView === "projects" && <section className="projects-page-section">
+            <div className="projects-page-heading"><div><span className="section-kicker">YOUR WORKSPACE</span><h2>All projects</h2><p>Manage the projects you are currently working on.</p></div><button className="project-primary-button" type="button" onClick={() => { setProjectForm(blankProject); setProjectMessage(""); setActiveView("new-project"); }}><Plus size={16} /> New Project</button></div>
+            {projectMessage && <p className="project-success-message" role="status">{projectMessage}</p>}
+            {projects.length === 0 ? <div className="dashboard-empty-panel projects-empty"><div className="dashboard-empty-icon"><FolderKanban size={24} /></div><h3>No projects yet</h3><p>Create a project to keep its details, ownership, dates and progress together.</p><button className="project-primary-button" type="button" onClick={() => { setProjectForm(blankProject); setProjectMessage(""); setActiveView("new-project"); }}><Plus size={16} /> Create first project</button></div> : <div className="projects-table-wrap"><div className="projects-table-heading"><span>PROJECT</span><span>STATUS</span><span>PRIORITY</span><span>TARGET DATE</span></div>{projects.map((project) => <div className="projects-table-row" key={project.id}><div className="projects-table-name"><span className="project-row-mark">{project.name.slice(0, 1).toUpperCase()}</span><span><strong>{project.name}</strong><small>{project.project_code || project.client_name || "No code or client"}</small></span></div><span className={"project-status status-" + project.status.toLowerCase().replaceAll(" ", "-")}>{project.status}</span><span className={"project-priority priority-" + project.priority.toLowerCase()}>{project.priority}</span><span className="project-date">{project.target_end_date || "Not set"}</span></div>)}</div>}
+          </section>}
+          {activeView === "new-project" && <section className="new-project-section">
+            <button className="project-back-button" type="button" onClick={() => setActiveView("projects")}><ArrowLeft size={15} /> Back to projects</button>
+            <div className="new-project-heading"><span className="section-kicker">PROJECT DETAILS</span><h2>Create a new project</h2><p>Add the essentials now. You can update the details later.</p></div>
+            <form className="new-project-form" onSubmit={createProject}><div className="project-form-grid">
+              <label className="project-form-field project-field-wide">Project name <span>*</span><input name="name" value={projectForm.name} onChange={updateProjectField} placeholder="e.g. Website redesign" required maxLength={120} /></label>
+              <label className="project-form-field">Project code<input name="project_code" value={projectForm.project_code} onChange={updateProjectField} placeholder="e.g. GPMS-001" maxLength={40} /></label>
+              <label className="project-form-field">Client name<input name="client_name" value={projectForm.client_name} onChange={updateProjectField} placeholder="Enter client or organisation" /></label>
+              <label className="project-form-field project-field-wide">Description<textarea name="description" value={projectForm.description} onChange={updateProjectField} placeholder="What is this project about?" rows={3} /></label>
+              <label className="project-form-field">Status<select name="status" value={projectForm.status} onChange={updateProjectField}><option>Not Started</option><option>Active</option><option>On Hold</option><option>Completed</option><option>Cancelled</option></select></label>
+              <label className="project-form-field">Priority<select name="priority" value={projectForm.priority} onChange={updateProjectField}><option>Low</option><option>Medium</option><option>High</option><option>Critical</option></select></label>
+              <label className="project-form-field">Start date<input type="date" name="start_date" value={projectForm.start_date} onChange={updateProjectField} /></label>
+              <label className="project-form-field">Target end date<input type="date" name="target_end_date" value={projectForm.target_end_date} onChange={updateProjectField} /></label>
+              <label className="project-form-field">Project budget<input type="number" name="budget" value={projectForm.budget} onChange={updateProjectField} placeholder="0.00" min="0" step="0.01" /></label>
+              <label className="project-form-field">Currency<select name="currency" value={projectForm.currency} onChange={updateProjectField}><option value="INR">INR — Indian Rupee</option><option value="USD">USD — US Dollar</option><option value="AUD">AUD — Australian Dollar</option><option value="GBP">GBP — British Pound</option><option value="EUR">EUR — Euro</option></select></label>
+              <label className="project-form-field project-field-wide">Project manager<input name="project_manager" value={projectForm.project_manager} onChange={updateProjectField} placeholder="Name of project manager" /></label>
+              <label className="project-form-field project-field-wide">Notes<textarea name="notes" value={projectForm.notes} onChange={updateProjectField} placeholder="Additional details or internal notes" rows={3} /></label>
+            </div>{projectMessage && <p className="auth-error" role="alert">{projectMessage}</p>}<div className="new-project-actions"><button className="project-cancel-button" type="button" onClick={() => setActiveView("projects")}>Cancel</button><button className="project-primary-button" type="submit" disabled={isSavingProject}>{isSavingProject ? "Saving…" : "Save Project"} <ArrowRight size={16} /></button></div></form>
+          </section>}
         </main>
       </div>
     );

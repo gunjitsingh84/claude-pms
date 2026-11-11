@@ -163,3 +163,72 @@
 .project-cancel-button:hover{background:#f7f8f4}
 @media(max-width:900px){.projects-table-heading,.projects-table-row{grid-template-columns:minmax(180px,1.6fr) minmax(95px,.9fr) minmax(75px,.7fr) minmax(90px,.8fr);gap:9px;padding-left:12px;padding-right:12px}}
 @media(max-width:650px){.dashboard-nav a:not(.dashboard-nav-active){display:flex}.dashboard-nav a{font-size:0;justify-content:center;padding:0}.project-list-row{gap:8px;padding:10px}.project-row-mark{width:32px;height:32px;flex-basis:32px}.project-status,.project-priority{font-size:8px;padding:4px 6px}.project-section-heading,.projects-page-heading{align-items:flex-start}.projects-page-heading{flex-direction:column}.projects-table-heading{display:none}.projects-table-row{grid-template-columns:minmax(0,1fr) auto;gap:9px;padding:12px}.projects-table-name{grid-column:1/-1}.projects-table-row .project-status{justify-self:start}.project-date{justify-self:end}.new-project-section{margin-top:20px}.new-project-form{padding:17px 14px}.project-form-grid{grid-template-columns:1fr;gap:14px}.project-field-wide{grid-column:auto}.new-project-heading h2{font-size:22px}.new-project-actions{position:sticky;bottom:0;background:#fff;padding:14px 0 0}.dashboard-welcome .project-primary-button{align-self:stretch}}
+
+
+/* Project tasks, Excel import and Gantt planning */
+.project-detail-section{max-width:1120px;margin:28px auto 0}
+.project-detail-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin:4px 0 20px}
+.project-detail-heading h2{font-family:Manrope,sans-serif;font-size:25px;letter-spacing:-.6px;color:#2e392e;margin:6px 0}
+.project-detail-heading p{font-size:11px;color:#858b80;margin:0}
+.project-detail-actions{display:flex;align-items:center;gap:9px;flex-shrink:0}
+.task-import-button{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:42px;padding:0 14px;border:1px solid #dfe3d9;border-radius:9px;background:#fff;color:#526c55;font-size:11px;font-weight:700;cursor:pointer;overflow:hidden}
+.task-import-button:hover{border-color:#a9bda3;background:#fbfdf9}
+.task-import-button input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
+.task-summary-strip{display:flex;gap:25px;padding:14px 17px;background:#fff;border:1px solid #e9e8df;border-radius:11px;margin-bottom:17px}
+.task-summary-strip span{font-size:10px;color:#818a7f}
+.task-summary-strip strong{font-family:Manrope,sans-serif;font-size:17px;color:#344c3b;margin-right:5px}
+.task-message{background:#edf4ea;border-radius:8px;color:#426b48;padding:10px 13px;margin:0 0 14px;font-size:11px}
+.new-task-form{background:#fff;border:1px solid #e4e8df;border-radius:13px;padding:19px 21px;margin:0 0 20px}
+.task-form-heading{display:flex;justify-content:space-between;align-items:center;padding-bottom:13px;margin-bottom:15px;border-bottom:1px solid #edf0e8}
+.task-form-heading>div{display:flex;flex-direction:column;gap:4px}
+.task-form-heading strong{font-size:13px;color:#354034}
+.task-form-heading small{font-size:10px;color:#92998e}
+.task-close-button{border:0;background:transparent;color:#768374;font:inherit;font-size:10px;cursor:pointer}
+.task-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 16px}
+.task-form-wide{grid-column:1/-1}
+.task-view-toolbar{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin:27px 0 13px}
+.task-view-toolbar h3{font-family:Manrope,sans-serif;font-size:18px;color:#344034;margin:0 0 5px}
+.task-view-toolbar p{font-size:10px;color:#91998f;margin:0}
+.task-view-switch{display:flex;align-items:center;gap:4px;padding:4px;background:#eff2eb;border-radius:9px}
+.task-view-switch button{height:32px;display:inline-flex;align-items:center;gap:7px;padding:0 11px;border:0;border-radius:7px;background:transparent;color:#7e887c;font:inherit;font-size:10px;font-weight:700;cursor:pointer}
+.task-view-switch button.task-view-active{background:#fff;color:#3f6547;box-shadow:0 1px 4px #263b3514}
+.task-table-wrap{background:#fff;border:1px solid #e9e8df;border-radius:12px;overflow:hidden}
+.task-table-heading,.task-table-row{display:grid;grid-template-columns:minmax(210px,2.1fr) minmax(90px,.95fr) minmax(75px,.7fr) minmax(105px,1fr) 65px;align-items:center;gap:12px;padding:12px 15px}
+.task-table-heading{background:#fbfcf9;border-bottom:1px solid #e9e8df;color:#9ba194;font-size:9px;font-weight:700;letter-spacing:1px}
+.task-table-row{min-height:61px;border-bottom:1px solid #f0f0e9}
+.task-table-row:last-child{border-bottom:0}
+.task-table-name{min-width:0;display:flex;flex-direction:column;gap:5px}
+.task-table-name strong{font-size:11px;color:#354034;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.task-table-name small{font-size:9px;color:#969d92;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.task-status{justify-self:start;display:inline-flex;padding:5px 8px;border-radius:20px;background:#f2f1e9;color:#7b755e;font-size:9px;font-weight:700;white-space:nowrap}
+.task-status-in-progress{background:#e8f0fa;color:#53749b}
+.task-status-blocked{background:#fae9e5;color:#a75d52}
+.task-status-completed{background:#e7f2e8;color:#3f784c}
+.task-date-cell{display:flex;flex-direction:column;gap:4px;font-size:10px;color:#667363}
+.task-date-cell small{font-size:9px;color:#9aa195}
+.task-hours-cell{font-size:10px;font-weight:700;color:#647360}
+.task-empty-state{min-height:235px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;background:#fff;border:1px dashed #dfe4d9;border-radius:12px;padding:26px}
+.task-empty-state>svg{color:#719274;margin-bottom:10px}
+.task-empty-state h3{font-family:Manrope,sans-serif;font-size:15px;color:#354034;margin:0 0 6px}
+.task-empty-state p{max-width:410px;font-size:10px;line-height:1.7;color:#8a9287;margin:0 0 15px}
+.gantt-wrap{background:#fff;border:1px solid #e9e8df;border-radius:12px;padding:12px 15px;overflow-x:auto}
+.gantt-header,.gantt-row{display:grid;grid-template-columns:minmax(185px,245px) minmax(430px,1fr);gap:15px;align-items:center}
+.gantt-header{padding:6px 0 12px;border-bottom:1px solid #edf0e8;color:#929a8f;font-size:9px;font-weight:700}
+.gantt-scale{display:flex;justify-content:space-between;color:#8a9487;font-size:9px}
+.gantt-row{min-height:51px;border-bottom:1px solid #f1f2ec}
+.gantt-row:last-child{border-bottom:0}
+.gantt-task-name{display:flex;flex-direction:column;gap:4px;min-width:0}
+.gantt-task-name strong{font-size:10px;color:#39483a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gantt-task-name small{font-size:8px;color:#9ba397}
+.gantt-track{position:relative;height:24px;border-radius:5px;background:repeating-linear-gradient(to right,#f7f8f4 0,#f7f8f4 calc(10% - 1px),#ecefe8 calc(10% - 1px),#ecefe8 10%)}
+.gantt-bar{position:absolute;top:5px;height:14px;min-width:5px;border-radius:5px;background:#87ad8c;box-shadow:0 2px 5px #446d4a26}
+.gantt-in-progress{background:#85a8ce}.gantt-blocked{background:#d99a8d}.gantt-completed{background:#79a982}
+.gantt-note{font-size:9px;color:#8e968c;margin:12px 3px 2px}
+.gantt-empty{border:0;min-height:200px}
+.task-import-help{display:flex;align-items:flex-start;gap:10px;margin-top:18px;padding:13px 15px;border:1px solid #e9e8df;border-radius:10px;background:#fbfcf9;color:#798477}
+.task-import-help>svg{flex:0 0 auto;color:#658568;margin-top:2px}
+.task-import-help span{font-size:9px;line-height:1.7}
+.task-import-help strong{display:block;color:#52634f;font-size:10px;margin-bottom:2px}
+.projects-table-row[role=button]{cursor:pointer}
+.projects-table-row[role=button]:hover{background:#fbfdf9}
+@media(max-width:720px){.project-detail-heading{align-items:flex-start;flex-direction:column}.project-detail-actions{width:100%}.project-detail-actions>*{flex:1}.task-summary-strip{gap:12px;justify-content:space-between;padding:12px}.task-summary-strip strong{font-size:15px}.task-view-toolbar{align-items:flex-start;flex-direction:column}.task-form-grid{grid-template-columns:1fr}.task-form-wide{grid-column:auto}.new-task-form{padding:15px 13px}.task-table-wrap{overflow-x:auto}.task-table-heading,.task-table-row{min-width:720px}.gantt-wrap{padding:10px}.gantt-header,.gantt-row{min-width:650px}}

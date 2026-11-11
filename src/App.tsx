@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { supabase } from './lib/supabase';
-import ExcelJS from 'exceljs';
 import { AlertTriangle, ArrowLeft, ArrowRight, CalendarDays, Check, CircleCheck, ClipboardList, Clock3, Eye, EyeOff, FileSpreadsheet, FolderKanban, Layers3, LayoutDashboard, ListTodo, LogOut, Plus, ShieldCheck, Target, Users } from 'lucide-react';
 
 type Project = { id: string; project_code: string | null; name: string; client_name: string | null; description: string | null; status: string; priority: string; start_date: string | null; target_end_date: string | null; actual_completion_date: string | null; budget: number | null; currency: string; project_manager: string | null; notes: string | null; created_at: string; };
@@ -170,6 +169,7 @@ function App() {
     setIsImportingTasks(true); setTaskMessage('');
     try {
       if (!/\.xlsx$/i.test(file.name) && !/\.xlsm$/i.test(file.name)) throw new Error('Please upload an Excel workbook in .xlsx format.');
+      const ExcelJS = await import('exceljs');
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.load(await file.arrayBuffer());
       const worksheet = workbook.worksheets[0];

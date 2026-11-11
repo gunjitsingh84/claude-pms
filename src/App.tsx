@@ -14,8 +14,8 @@ const taskDateText = (value: unknown): string => {
   if (typeof value === 'number' && Number.isFinite(value)) return new Date(Date.UTC(1899, 11, 30) + value * 86400000).toISOString().slice(0, 10);
   const raw = String(value ?? '').trim();
   if (!raw) return '';
-  if (/^\\d{4}-\\d{2}-\\d{2}$/.test(raw)) return raw;
-  const dmy = raw.match(/^(\\d{1,2})[/-](\\d{1,2})[/-](\\d{4})$/);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+  const dmy = raw.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
   if (dmy) return dmy[3] + '-' + dmy[2].padStart(2, '0') + '-' + dmy[1].padStart(2, '0');
   const parsed = new Date(raw);
   return Number.isNaN(parsed.getTime()) ? '__INVALID__' : parsed.toISOString().slice(0, 10);
@@ -169,7 +169,7 @@ function App() {
     if (!file || !selectedProject || !supabase || !sessionToken) return;
     setIsImportingTasks(true); setTaskMessage('');
     try {
-      if (!/\\.xlsx$/i.test(file.name) && !/\\.xlsm$/i.test(file.name)) throw new Error('Please upload an Excel workbook in .xlsx format.');
+      if (!/\.xlsx$/i.test(file.name) && !/\.xlsm$/i.test(file.name)) throw new Error('Please upload an Excel workbook in .xlsx format.');
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.load(await file.arrayBuffer());
       const worksheet = workbook.worksheets[0];

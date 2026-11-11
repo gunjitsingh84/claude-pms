@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from './lib/supabase';
 import { AlertTriangle, ArrowLeft, ArrowRight, Check, CircleCheck, ClipboardList, Clock3, Eye, EyeOff, FolderKanban, Layers3, LayoutDashboard, ListTodo, LogOut, Plus, ShieldCheck, Target, Users } from 'lucide-react';
 
@@ -21,6 +21,72 @@ function App() {
   const [projectForm, setProjectForm] = useState<ProjectForm>(blankProject);
   const [projectMessage, setProjectMessage] = useState('');
   const [isSavingProject, setIsSavingProject] = useState(false);
+
+  // Automatically end an authenticated session after 60 seconds without activity.
+  useEffect(() => {
+    if (!authenticated || screen !== 'dashboard') return;
+
+    const inactivityLimit = 60_000;
+    let lastActivityAt = Date.now();
+    let timeoutId: number;
+
+    const expireSession = () => {
+      window.clearTimeout(timeoutId);
+      setAuthenticated(false);
+      setSessionToken('');
+      setProjects([]);
+      setOtp('');
+      setActiveView('overview');
+      setMessage('You were signed out after 60 seconds of inactivity. Please sign in again.');
+      setScreen('signin');
+    };
+
+    const scheduleExpiry = () => {
+      window.clearTimeout(timeoutId);
+      const remaining = inactivityLimit - (Date.now() - lastActivityAt);
+      if (remaining <= 0) {
+        expireSession();
+        return;
+      }
+      timeoutId = window.setTimeout(scheduleExpiry, remaining);
+    };
+
+    const recordActivity = () => {
+      if (Date.now() - lastActivityAt >= inactivityLimit) {
+        expireSession();
+        return;
+      }
+      lastActivityAt = Date.now();
+      scheduleExpiry();
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        if (Date.now() - lastActivityAt >= inactivityLimit) {
+          expireSession();
+        } else {
+          scheduleExpiry();
+        }
+      }
+    };
+
+    const activityEvents = ['mousemove', 'mousedown', 'pointerdown', 'keydown', 'touchstart', 'scroll', 'wheel', 'click'] as const;
+    activityEvents.forEach((eventName) => {
+      window.addEventListener(eventName, recordActivity, { passive: true });
+    });
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    scheduleExpiry();
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      activityEvents.forEach((eventName) => {
+        window.removeEventListener(eventName, recordActivity);
+      });
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [authenticated, screen]);
+
 
   const openSignIn = (event: React.MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();

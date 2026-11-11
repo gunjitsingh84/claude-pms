@@ -62,7 +62,12 @@ function App() {
       setAuthenticated(true);
       setActiveView('overview');
       setProjectMessage('');
-      await loadProjects(data.session_token);
+      try {
+        await loadProjects(data.session_token);
+      } catch (loadError) {
+        setProjects([]);
+        setProjectMessage(loadError instanceof Error ? loadError.message : 'Projects could not be loaded yet.');
+      }
       setOtp('');
       setScreen('dashboard');
     } catch (error) {

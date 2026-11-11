@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from './lib/supabase';
 import ExcelJS from 'exceljs';
-import { AlertTriangle, ArrowLeft, ArrowRight, CalendarDays, Check, CircleCheck, ClipboardList, Clock3, Eye, EyeOff, FileSpreadsheet, FolderKanban, Layers3, LayoutDashboard, ListTodo, LogOut, Plus, ShieldCheck, Target, Upload, Users } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, ArrowRight, CalendarDays, Check, CircleCheck, ClipboardList, Clock3, Eye, EyeOff, FileSpreadsheet, FolderKanban, Layers3, LayoutDashboard, ListTodo, LogOut, Plus, ShieldCheck, Target, Users } from 'lucide-react';
 
 type Project = { id: string; project_code: string | null; name: string; client_name: string | null; description: string | null; status: string; priority: string; start_date: string | null; target_end_date: string | null; actual_completion_date: string | null; budget: number | null; currency: string; project_manager: string | null; notes: string | null; created_at: string; };
 type ProjectForm = { project_code: string; name: string; client_name: string; description: string; status: string; priority: string; start_date: string; target_end_date: string; budget: string; currency: string; project_manager: string; notes: string; };
@@ -339,7 +339,7 @@ function App() {
                   const startOffset = Math.max(0, Math.round((new Date((task.start_date as string) + 'T00:00:00Z').getTime() - firstDay) / 86400000));
                   const duration = Math.max(1, Math.round((new Date((task.due_date as string) + 'T00:00:00Z').getTime() - new Date((task.start_date as string) + 'T00:00:00Z').getTime()) / 86400000) + 1);
                   return <div className="gantt-row" key={task.id}><div className="gantt-task-name"><strong>{task.task_name}</strong><small>{task.external_id || task.status}</small></div><div className="gantt-track"><span className={'gantt-bar gantt-' + task.status.toLowerCase().replaceAll(' ', '-')} style={{ left: (startOffset / daySpan * 100) + '%', width: (duration / daySpan * 100) + '%' }} title={task.task_name + ': ' + task.start_date + ' to ' + task.due_date} /></div></div>;
-                })}</>;}
+                })}</>;
               })()}
               {tasks.some((task) => !task.start_date || !task.due_date) && <p className="gantt-note">Some tasks are not shown because they need both a start date and a due date.</p>}
             </div>}

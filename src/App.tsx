@@ -1,10 +1,25 @@
 import { useEffect, useState } from 'react';
 import { supabase } from './lib/supabase';
-import { AlertTriangle, ArrowLeft, ArrowRight, Check, CircleCheck, ClipboardList, Clock3, Eye, EyeOff, FolderKanban, Layers3, LayoutDashboard, ListTodo, LogOut, Plus, ShieldCheck, Target, Users } from 'lucide-react';
+import ExcelJS from 'exceljs';
+import { AlertTriangle, ArrowLeft, ArrowRight, CalendarDays, Check, CircleCheck, ClipboardList, Clock3, Eye, EyeOff, FileSpreadsheet, FolderKanban, Layers3, LayoutDashboard, ListTodo, LogOut, Plus, ShieldCheck, Target, Upload, Users } from 'lucide-react';
 
 type Project = { id: string; project_code: string | null; name: string; client_name: string | null; description: string | null; status: string; priority: string; start_date: string | null; target_end_date: string | null; actual_completion_date: string | null; budget: number | null; currency: string; project_manager: string | null; notes: string | null; created_at: string; };
 type ProjectForm = { project_code: string; name: string; client_name: string; description: string; status: string; priority: string; start_date: string; target_end_date: string; budget: string; currency: string; project_manager: string; notes: string; };
 const blankProject: ProjectForm = { project_code: '', name: '', client_name: '', description: '', status: 'Not Started', priority: 'Medium', start_date: '', target_end_date: '', budget: '', currency: 'INR', project_manager: '', notes: '' };
+type Task = { id: string; project_id: string; external_id: string | null; task_name: string; description: string | null; status: string; priority: string; start_date: string | null; due_date: string | null; estimated_hours: number; };
+type TaskForm = { external_id: string; task_name: string; description: string; status: string; priority: string; start_date: string; due_date: string; estimated_hours: string; };
+const blankTask: TaskForm = { external_id: '', task_name: '', description: '', status: 'To Do', priority: 'Medium', start_date: '', due_date: '', estimated_hours: '0' };
+const taskDateText = (value: unknown): string => {
+  if (value instanceof Date && !Number.isNaN(value.getTime())) return value.toISOString().slice(0, 10);
+  if (typeof value === 'number' && Number.isFinite(value)) return new Date(Date.UTC(1899, 11, 30) + value * 86400000).toISOString().slice(0, 10);
+  const raw = String(value ?? '').trim();
+  if (!raw) return '';
+  if (/^\\d{4}-\\d{2}-\\d{2}$/.test(raw)) return raw;
+  const dmy = raw.match(/^(\\d{1,2})[/-](\\d{1,2})[/-](\\d{4})$/);
+  if (dmy) return dmy[3] + '-' + dmy[2].padStart(2, '0') + '-' + dmy[1].padStart(2, '0');
+  const parsed = new Date(raw);
+  return Number.isNaN(parsed.getTime()) ? '__INVALID__' : parsed.toISOString().slice(0, 10);
+};
 
 function App() {
   const [screen, setScreen] = useState<'landing' | 'signin' | 'dashboard'>('landing');
@@ -16,11 +31,19 @@ function App() {
   const [fullName, setFullName] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [sessionToken, setSessionToken] = useState('');
-  const [activeView, setActiveView] = useState<'overview' | 'projects' | 'new-project'>('overview');
+  const [activeView, setActiveView] = useState<'overview' | 'projects' | 'new-project' | 'project-detail'>('overview');
   const [projects, setProjects] = useState<Project[]>([]);
   const [projectForm, setProjectForm] = useState<ProjectForm>(blankProject);
   const [projectMessage, setProjectMessage] = useState('');
   const [isSavingProject, setIsSavingProject] = useState(false);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [taskForm, setTaskForm] = useState<TaskForm>(blankTask);
+  const [taskMessage, setTaskMessage] = useState('');
+  const [isSavingTask, setIsSavingTask] = useState(false);
+  const [isImportingTasks, setIsImportingTasks] = useState(false);
+  const [showTaskForm, setShowTaskForm] = useState(false);
+  const [taskDisplay, setTaskDisplay] = useState<'list' | 'gantt'>('list');
 
   // Automatically end an authenticated session after 60 seconds without activity.
   useEffect(() => {
@@ -102,6 +125,97 @@ function App() {
     if (error || !data?.projects) throw new Error(data?.error || 'Unable to load projects.');
     setProjects(data.projects as Project[]);
   };
+  const loadTasks = async (token: string, projectId?: string) => {
+    if (!supabase) throw new Error('Supabase is not configured.');
+    const { data, error } = await supabase.functions.invoke('gpms-projects', {
+      body: { action: 'list_tasks', ...(projectId ? { project_id: projectId } : {}) },
+      headers: { Authorization: 'Bearer ' + token },
+    });
+    if (error || !data?.tasks) throw new Error(data?.error || 'Unable to load tasks.');
+    setTasks(data.tasks as Task[]);
+  };
+  const openProject = async (project: Project) => {
+    setSelectedProject(project);
+    setTaskForm(blankTask);
+    setTaskMessage('Loading tasks…');
+    setTasks([]);
+    setShowTaskForm(false);
+    setTaskDisplay('list');
+    setActiveView('project-detail');
+    try { await loadTasks(sessionToken, project.id); setTaskMessage(''); }
+    catch (error) { setTaskMessage(error instanceof Error ? error.message : 'Unable to load project tasks.'); }
+  };
+  const updateTaskField = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = event.target;
+    setTaskForm((current) => ({ ...current, [name]: value }));
+  };
+  const createTask = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!supabase || !sessionToken || !selectedProject) { setTaskMessage('Your session has expired. Please sign in again.'); return; }
+    setIsSavingTask(true); setTaskMessage('');
+    try {
+      const { data, error } = await supabase.functions.invoke('gpms-projects', {
+        body: { action: 'create_task', project_id: selectedProject.id, task: { ...taskForm, estimated_hours: Number(taskForm.estimated_hours || 0) } },
+        headers: { Authorization: 'Bearer ' + sessionToken },
+      });
+      if (error || !data?.task) { setTaskMessage(data?.error || 'Could not save this task.'); return; }
+      setTasks((current) => [...current, data.task as Task].sort((x, y) => (x.start_date || '9999').localeCompare(y.start_date || '9999')));
+      setTaskForm(blankTask); setShowTaskForm(false); setTaskMessage('Task created successfully.');
+    } catch (error) { setTaskMessage(error instanceof Error ? error.message : 'Unable to save this task.'); }
+    finally { setIsSavingTask(false); }
+  };
+  const importTasksFromExcel = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !selectedProject || !supabase || !sessionToken) return;
+    setIsImportingTasks(true); setTaskMessage('');
+    try {
+      if (!/\\.xlsx$/i.test(file.name) && !/\\.xlsm$/i.test(file.name)) throw new Error('Please upload an Excel workbook in .xlsx format.');
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(await file.arrayBuffer());
+      const worksheet = workbook.worksheets[0];
+      if (!worksheet) throw new Error('No worksheet was found in this file.');
+      const headerMap = new Map<string, number>();
+      const headerRow = worksheet.getRow(1);
+      for (let column = 1; column <= headerRow.cellCount; column += 1) {
+        const name = headerRow.getCell(column).text.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (name) headerMap.set(name, column);
+      }
+      const requiredHeaders = ['id', 'taskname', 'description', 'status', 'priority', 'startdate', 'duedate', 'estimatedhours'];
+      const missing = requiredHeaders.filter((name) => !headerMap.has(name));
+      if (missing.length) throw new Error('Missing columns: ' + missing.join(', ') + '. Use the GPMS task import template.');
+      const importedRows: Array<Record<string, unknown>> = [];
+      for (let rowNumber = 2; rowNumber <= worksheet.rowCount; rowNumber += 1) {
+        const row = worksheet.getRow(rowNumber);
+        const cell = (key: string) => row.getCell(headerMap.get(key) as number);
+        const externalId = cell('id').text.trim();
+        const taskName = cell('taskname').text.trim();
+        if (!externalId && !taskName) continue;
+        if (!externalId || !taskName) throw new Error('Row ' + rowNumber + ': both ID and Task name are required.');
+        const startDate = taskDateText(cell('startdate').value);
+        const dueDate = taskDateText(cell('duedate').value);
+        if (startDate === '__INVALID__' || dueDate === '__INVALID__') throw new Error('Row ' + rowNumber + ': enter valid Start date and Due date values.');
+        const hoursText = cell('estimatedhours').text.trim();
+        const hours = hoursText ? Number(hoursText.replace(/,/g, '')) : 0;
+        if (!Number.isFinite(hours) || hours < 0) throw new Error('Row ' + rowNumber + ': Estimated hours must be zero or a positive number.');
+        importedRows.push({ external_id: externalId, task_name: taskName, description: cell('description').text.trim(), status: cell('status').text.trim() || 'To Do', priority: cell('priority').text.trim() || 'Medium', start_date: startDate || null, due_date: dueDate || null, estimated_hours: hours });
+      }
+      if (!importedRows.length) throw new Error('No task rows were found below the header.');
+      if (importedRows.length > 500) throw new Error('Please import no more than 500 tasks at a time.');
+      const { data, error } = await supabase.functions.invoke('gpms-projects', {
+        body: { action: 'import_tasks', project_id: selectedProject.id, tasks: importedRows },
+        headers: { Authorization: 'Bearer ' + sessionToken },
+      });
+      if (error || !data?.tasks) throw new Error(data?.error || 'The tasks could not be imported.');
+      setTasks((current) => {
+        const updated = new Map(current.map((task) => [task.id, task]));
+        (data.tasks as Task[]).forEach((task) => updated.set(task.id, task));
+        return Array.from(updated.values()).sort((x, y) => (x.start_date || '9999').localeCompare(y.start_date || '9999'));
+      });
+      setTaskMessage(data.imported + ' tasks imported successfully.');
+    } catch (error) { setTaskMessage(error instanceof Error ? error.message : 'Unable to read this Excel file.'); }
+    finally { setIsImportingTasks(false); event.target.value = ''; }
+  };
+
   const verifyOtp = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!supabase) {
@@ -130,6 +244,7 @@ function App() {
       setProjectMessage('');
       try {
         await loadProjects(data.session_token);
+        await loadTasks(data.session_token);
       } catch (loadError) {
         setProjects([]);
         setProjectMessage(loadError instanceof Error ? loadError.message : 'Projects could not be loaded yet.');
@@ -176,26 +291,59 @@ function App() {
           <nav className="dashboard-nav">
             <a className={activeView === "overview" ? "dashboard-nav-active" : ""} href="#overview" onClick={(event) => { event.preventDefault(); setActiveView("overview"); }}><LayoutDashboard size={17} /> Overview</a>
             <a className={activeView !== "overview" ? "dashboard-nav-active" : ""} href="#projects" onClick={(event) => { event.preventDefault(); setActiveView("projects"); setProjectMessage(""); }}><FolderKanban size={17} /> Projects</a>
-            <a href="#tasks"><ClipboardList size={17} /> Tasks</a>
+            <a href="#tasks" onClick={(event) => { event.preventDefault(); setActiveView('projects'); setProjectMessage('Open a project to manage its tasks.'); }}><ClipboardList size={17} /> Tasks</a>
           </nav>
-          <button className="dashboard-logout" type="button" onClick={() => { setScreen('signin'); setAuthenticated(false); setSessionToken(''); setProjects([]); setOtp(''); setMessage(''); }}><LogOut size={17} /> Sign out</button>
+          <button className="dashboard-logout" type="button" onClick={() => { setScreen('signin'); setAuthenticated(false); setSessionToken(''); setProjects([]); setTasks([]); setSelectedProject(null); setOtp(''); setMessage(''); }}><LogOut size={17} /> Sign out</button>
         </aside>
         <main className="dashboard-main">
-          <header className="dashboard-topbar"><div><span className="dashboard-breadcrumb">WORKSPACE / {activeView === "overview" ? "OVERVIEW" : activeView === "projects" ? "PROJECTS" : "NEW PROJECT"}</span><h1>{activeView === "overview" ? "Dashboard" : activeView === "projects" ? "Projects" : "New Project"}</h1></div><div className="dashboard-user"><span className="dashboard-user-avatar">{fullName.slice(0, 1).toUpperCase()}</span><span><strong>Welcome, {fullName || "User"}</strong><small>+91 {phone}</small></span></div></header>
+          <header className="dashboard-topbar"><div><span className="dashboard-breadcrumb">WORKSPACE / {activeView === "overview" ? "OVERVIEW" : activeView === "projects" ? "PROJECTS" : activeView === "project-detail" ? "PROJECT TASKS" : "NEW PROJECT"}</span><h1>{activeView === "overview" ? "Dashboard" : activeView === "projects" ? "Projects" : activeView === "project-detail" ? (selectedProject?.name || 'Project tasks') : "New Project"}</h1></div><div className="dashboard-user"><span className="dashboard-user-avatar">{fullName.slice(0, 1).toUpperCase()}</span><span><strong>Welcome, {fullName || "User"}</strong><small>+91 {phone}</small></span></div></header>
           {activeView === "overview" && <>
             <section className="dashboard-welcome"><div><span className="section-kicker">YOUR WORK AT A GLANCE</span><h2>Good to see you.</h2><p>Here is an overview of your projects and tasks.</p></div><button className="project-primary-button" type="button" onClick={() => { setProjectForm(blankProject); setProjectMessage(""); setActiveView("new-project"); }}><Plus size={16} /> New Project</button></section>
             <section className="dashboard-metrics" aria-label="Project and task summary">
               <article className="dashboard-metric metric-projects"><span className="metric-icon"><FolderKanban size={20} /></span><span className="metric-label">Total Projects</span><strong>{projects.length}</strong><small>{projects.length} projects in your workspace</small></article>
-              <article className="dashboard-metric metric-tasks"><span className="metric-icon"><ClipboardList size={20} /></span><span className="metric-label">Total Tasks</span><strong>0</strong><small>Tasks will appear here</small></article>
-              <article className="dashboard-metric metric-pending"><span className="metric-icon"><Clock3 size={20} /></span><span className="metric-label">Pending Tasks</span><strong>0</strong><small>Tasks awaiting completion</small></article>
-              <article className="dashboard-metric metric-overdue"><span className="metric-icon"><AlertTriangle size={20} /></span><span className="metric-label">Overdue Tasks</span><strong>0</strong><small>Tasks past their due date</small></article>
+              <article className="dashboard-metric metric-tasks"><span className="metric-icon"><ClipboardList size={20} /></span><span className="metric-label">Total Tasks</span><strong>{tasks.length}</strong><small>Tasks across your projects</small></article>
+              <article className="dashboard-metric metric-pending"><span className="metric-icon"><Clock3 size={20} /></span><span className="metric-label">Pending Tasks</span><strong>{tasks.filter((task) => task.status !== 'Completed').length}</strong><small>Tasks not yet completed</small></article>
+              <article className="dashboard-metric metric-overdue"><span className="metric-icon"><AlertTriangle size={20} /></span><span className="metric-label">Overdue Tasks</span><strong>{tasks.filter((task) => task.due_date && task.due_date < new Date().toISOString().slice(0, 10) && task.status !== 'Completed').length}</strong><small>Tasks past their due date</small></article>
             </section>
-            {projects.length === 0 ? <section className="dashboard-empty-panel"><div className="dashboard-empty-icon"><Target size={24} /></div><h3>Your workspace is ready</h3><p>Create your first project to start organising the work, milestones and tasks in your workspace.</p><button className="project-text-button" type="button" onClick={() => { setProjectForm(blankProject); setActiveView("new-project"); }}>Create your first project <ArrowRight size={14} /></button></section> : <section className="dashboard-recent-projects"><div className="project-section-heading"><div><span className="section-kicker">KEEP THINGS MOVING</span><h3>Recent projects</h3></div><button className="project-text-button" type="button" onClick={() => setActiveView("projects")}>View all <ArrowRight size={14} /></button></div>{projects.slice(0, 3).map((project) => <button className="project-list-row" type="button" key={project.id} onClick={() => setActiveView("projects")}><span className="project-row-mark">{project.name.slice(0, 1).toUpperCase()}</span><span className="project-row-main"><strong>{project.name}</strong><small>{project.client_name || "No client specified"}</small></span><span className={"project-status status-" + project.status.toLowerCase().replaceAll(" ", "-")}>{project.status}</span><span className="project-priority">{project.priority}</span></button>)}</section>}
+            {projects.length === 0 ? <section className="dashboard-empty-panel"><div className="dashboard-empty-icon"><Target size={24} /></div><h3>Your workspace is ready</h3><p>Create your first project to start organising the work, milestones and tasks in your workspace.</p><button className="project-text-button" type="button" onClick={() => { setProjectForm(blankProject); setActiveView("new-project"); }}>Create your first project <ArrowRight size={14} /></button></section> : <section className="dashboard-recent-projects"><div className="project-section-heading"><div><span className="section-kicker">KEEP THINGS MOVING</span><h3>Recent projects</h3></div><button className="project-text-button" type="button" onClick={() => setActiveView("projects")}>View all <ArrowRight size={14} /></button></div>{projects.slice(0, 3).map((project) => <button className="project-list-row" type="button" key={project.id} onClick={() => openProject(project)}><span className="project-row-mark">{project.name.slice(0, 1).toUpperCase()}</span><span className="project-row-main"><strong>{project.name}</strong><small>{project.client_name || "No client specified"}</small></span><span className={"project-status status-" + project.status.toLowerCase().replaceAll(" ", "-")}>{project.status}</span><span className="project-priority">{project.priority}</span></button>)}</section>}
           </>}
           {activeView === "projects" && <section className="projects-page-section">
             <div className="projects-page-heading"><div><span className="section-kicker">YOUR WORKSPACE</span><h2>All projects</h2><p>Manage the projects you are currently working on.</p></div><button className="project-primary-button" type="button" onClick={() => { setProjectForm(blankProject); setProjectMessage(""); setActiveView("new-project"); }}><Plus size={16} /> New Project</button></div>
             {projectMessage && <p className="project-success-message" role="status">{projectMessage}</p>}
-            {projects.length === 0 ? <div className="dashboard-empty-panel projects-empty"><div className="dashboard-empty-icon"><FolderKanban size={24} /></div><h3>No projects yet</h3><p>Create a project to keep its details, ownership, dates and progress together.</p><button className="project-primary-button" type="button" onClick={() => { setProjectForm(blankProject); setProjectMessage(""); setActiveView("new-project"); }}><Plus size={16} /> Create first project</button></div> : <div className="projects-table-wrap"><div className="projects-table-heading"><span>PROJECT</span><span>STATUS</span><span>PRIORITY</span><span>TARGET DATE</span></div>{projects.map((project) => <div className="projects-table-row" key={project.id}><div className="projects-table-name"><span className="project-row-mark">{project.name.slice(0, 1).toUpperCase()}</span><span><strong>{project.name}</strong><small>{project.project_code || project.client_name || "No code or client"}</small></span></div><span className={"project-status status-" + project.status.toLowerCase().replaceAll(" ", "-")}>{project.status}</span><span className={"project-priority priority-" + project.priority.toLowerCase()}>{project.priority}</span><span className="project-date">{project.target_end_date || "Not set"}</span></div>)}</div>}
+            {projects.length === 0 ? <div className="dashboard-empty-panel projects-empty"><div className="dashboard-empty-icon"><FolderKanban size={24} /></div><h3>No projects yet</h3><p>Create a project to keep its details, ownership, dates and progress together.</p><button className="project-primary-button" type="button" onClick={() => { setProjectForm(blankProject); setProjectMessage(""); setActiveView("new-project"); }}><Plus size={16} /> Create first project</button></div> : <div className="projects-table-wrap"><div className="projects-table-heading"><span>PROJECT</span><span>STATUS</span><span>PRIORITY</span><span>TARGET DATE</span></div>{projects.map((project) => <div className="projects-table-row" key={project.id} role="button" tabIndex={0} onClick={() => openProject(project)}><div className="projects-table-name"><span className="project-row-mark">{project.name.slice(0, 1).toUpperCase()}</span><span><strong>{project.name}</strong><small>{project.project_code || project.client_name || "No code or client"}</small></span></div><span className={"project-status status-" + project.status.toLowerCase().replaceAll(" ", "-")}>{project.status}</span><span className={"project-priority priority-" + project.priority.toLowerCase()}>{project.priority}</span><span className="project-date">{project.target_end_date || "Not set"}</span></div>)}</div>}
+          </section>}
+          {activeView === "project-detail" && selectedProject && <section className="project-detail-section">
+            <button className="project-back-button" type="button" onClick={() => setActiveView("projects")}><ArrowLeft size={15} /> Back to projects</button>
+            <div className="project-detail-heading"><div><span className="section-kicker">PROJECT TASKS</span><h2>{selectedProject.name}</h2><p>{selectedProject.client_name || 'Project workspace'}{selectedProject.project_code ? ' · ' + selectedProject.project_code : ''}</p></div><div className="project-detail-actions"><label className="task-import-button"><input type="file" accept=".xlsx,.xlsm" onChange={importTasksFromExcel} disabled={isImportingTasks} /><FileSpreadsheet size={16} /> {isImportingTasks ? 'Importing…' : 'Import Excel'}</label><button className="project-primary-button" type="button" onClick={() => { setTaskForm(blankTask); setShowTaskForm((value) => !value); }}><Plus size={16} /> New Task</button></div></div>
+            <div className="task-summary-strip"><span><strong>{tasks.length}</strong> Tasks</span><span><strong>{tasks.filter((task) => task.status === 'Completed').length}</strong> Completed</span><span><strong>{tasks.reduce((total, task) => total + Number(task.estimated_hours || 0), 0).toFixed(1)}</strong> Estimated hours</span></div>
+            {taskMessage && <p className="task-message" role="status">{taskMessage}</p>}
+            {showTaskForm && <form className="new-task-form" onSubmit={createTask}><div className="task-form-heading"><div><strong>Add a task</strong><small>Enter the task details and schedule.</small></div><button type="button" className="task-close-button" onClick={() => setShowTaskForm(false)}>Cancel</button></div><div className="task-form-grid">
+              <label className="project-form-field">Task ID<input name="external_id" value={taskForm.external_id} onChange={updateTaskField} placeholder="e.g. TASK-001" /></label>
+              <label className="project-form-field task-form-wide">Task name <span>*</span><input name="task_name" value={taskForm.task_name} onChange={updateTaskField} placeholder="Enter task name" required maxLength={180} /></label>
+              <label className="project-form-field task-form-wide">Description<textarea name="description" value={taskForm.description} onChange={updateTaskField} rows={2} placeholder="Describe the task" /></label>
+              <label className="project-form-field">Status<select name="status" value={taskForm.status} onChange={updateTaskField}><option>To Do</option><option>In Progress</option><option>Blocked</option><option>Completed</option></select></label>
+              <label className="project-form-field">Priority<select name="priority" value={taskForm.priority} onChange={updateTaskField}><option>Low</option><option>Medium</option><option>High</option><option>Critical</option></select></label>
+              <label className="project-form-field">Start date<input type="date" name="start_date" value={taskForm.start_date} onChange={updateTaskField} /></label>
+              <label className="project-form-field">Due date<input type="date" name="due_date" value={taskForm.due_date} onChange={updateTaskField} min={taskForm.start_date || undefined} /></label>
+              <label className="project-form-field">Estimated hours<input type="number" name="estimated_hours" value={taskForm.estimated_hours} onChange={updateTaskField} min="0" step="0.25" /></label>
+            </div><div className="new-project-actions"><button className="project-cancel-button" type="button" onClick={() => setShowTaskForm(false)}>Cancel</button><button className="project-primary-button" type="submit" disabled={isSavingTask}>{isSavingTask ? 'Saving…' : 'Save Task'} <ArrowRight size={16} /></button></div></form>}
+            <div className="task-view-toolbar"><div><h3>Task plan</h3><p>Manage the work and schedule for this project.</p></div><div className="task-view-switch"><button className={taskDisplay === 'list' ? 'task-view-active' : ''} type="button" onClick={() => setTaskDisplay('list')}><ListTodo size={15} /> List</button><button className={taskDisplay === 'gantt' ? 'task-view-active' : ''} type="button" onClick={() => setTaskDisplay('gantt')}><CalendarDays size={15} /> Gantt chart</button></div></div>
+            {tasks.length === 0 ? <div className="task-empty-state"><ClipboardList size={25} /><h3>No tasks in this project yet</h3><p>Add tasks individually or import an Excel file using the GPMS column template.</p><button className="project-primary-button" type="button" onClick={() => setShowTaskForm(true)}><Plus size={15} /> Add first task</button></div> : taskDisplay === 'list' ? <div className="task-table-wrap"><div className="task-table-heading"><span>TASK</span><span>STATUS</span><span>PRIORITY</span><span>DATES</span><span>HOURS</span></div>{tasks.map((task) => <div className="task-table-row" key={task.id}><div className="task-table-name"><strong>{task.task_name}</strong><small>{task.external_id || 'No task ID'}{task.description ? ' · ' + task.description : ''}</small></div><span className={'task-status task-status-' + task.status.toLowerCase().replaceAll(' ', '-')} >{task.status}</span><span className={'project-priority priority-' + task.priority.toLowerCase()}>{task.priority}</span><span className="task-date-cell">{task.start_date || '—'}<small>to {task.due_date || '—'}</small></span><span className="task-hours-cell">{Number(task.estimated_hours || 0).toFixed(1)}h</span></div>)}</div> : <div className="gantt-wrap">
+              {(() => {
+                const scheduled = tasks.filter((task) => task.start_date && task.due_date);
+                if (!scheduled.length) return <div className="task-empty-state gantt-empty"><CalendarDays size={25} /><h3>No scheduled tasks</h3><p>Add both a start date and due date to a task to show it on the Gantt chart.</p></div>;
+                const firstDay = Math.min(...scheduled.map((task) => new Date((task.start_date as string) + 'T00:00:00Z').getTime()));
+                const lastDay = Math.max(...scheduled.map((task) => new Date((task.due_date as string) + 'T00:00:00Z').getTime()));
+                const daySpan = Math.max(1, Math.round((lastDay - firstDay) / 86400000) + 1);
+                return <><div className="gantt-header"><span>Task</span><div className="gantt-scale"><span>{new Date(firstDay).toISOString().slice(0, 10)}</span><span>{new Date(lastDay).toISOString().slice(0, 10)}</span></div></div>{scheduled.map((task) => {
+                  const startOffset = Math.max(0, Math.round((new Date((task.start_date as string) + 'T00:00:00Z').getTime() - firstDay) / 86400000));
+                  const duration = Math.max(1, Math.round((new Date((task.due_date as string) + 'T00:00:00Z').getTime() - new Date((task.start_date as string) + 'T00:00:00Z').getTime()) / 86400000) + 1);
+                  return <div className="gantt-row" key={task.id}><div className="gantt-task-name"><strong>{task.task_name}</strong><small>{task.external_id || task.status}</small></div><div className="gantt-track"><span className={'gantt-bar gantt-' + task.status.toLowerCase().replaceAll(' ', '-')} style={{ left: (startOffset / daySpan * 100) + '%', width: (duration / daySpan * 100) + '%' }} title={task.task_name + ': ' + task.start_date + ' to ' + task.due_date} /></div></div>;
+                })}</>;}
+              })()}
+              {tasks.some((task) => !task.start_date || !task.due_date) && <p className="gantt-note">Some tasks are not shown because they need both a start date and a due date.</p>}
+            </div>}
+            <div className="task-import-help"><FileSpreadsheet size={15} /><span><strong>Excel import format</strong> Use these exact columns in the first row: ID, Task name, Description, Status, Priority, Start date, Due date, Estimated hours. Empty optional cells are allowed. Import supports .xlsx files.</span></div>
           </section>}
           {activeView === "new-project" && <section className="new-project-section">
             <button className="project-back-button" type="button" onClick={() => setActiveView("projects")}><ArrowLeft size={15} /> Back to projects</button>

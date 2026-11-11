@@ -184,6 +184,7 @@ function App() {
       const missing = requiredHeaders.filter((name) => !headerMap.has(name));
       if (missing.length) throw new Error('Missing columns: ' + missing.join(', ') + '. Use the GPMS task import template.');
       const importedRows: Array<Record<string, unknown>> = [];
+      const importedIds = new Set<string>();
       for (let rowNumber = 2; rowNumber <= worksheet.rowCount; rowNumber += 1) {
         const row = worksheet.getRow(rowNumber);
         const cell = (key: string) => row.getCell(headerMap.get(key) as number);
@@ -191,6 +192,8 @@ function App() {
         const taskName = cell('taskname').text.trim();
         if (!externalId && !taskName) continue;
         if (!externalId || !taskName) throw new Error('Row ' + rowNumber + ': both ID and Task name are required.');
+        if (importedIds.has(externalId)) throw new Error('Row ' + rowNumber + ': duplicate task ID "' + externalId + '" in this workbook.');
+        importedIds.add(externalId);
         const startDate = taskDateText(cell('startdate').value);
         const dueDate = taskDateText(cell('duedate').value);
         if (startDate === '__INVALID__' || dueDate === '__INVALID__') throw new Error('Row ' + rowNumber + ': enter valid Start date and Due date values.');
